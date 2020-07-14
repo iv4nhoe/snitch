@@ -114,6 +114,8 @@ Config file can be stored in one of the following directories:
 - `$HOME/.config/snitch/gitlab.ini`
 - `$HOME/.snitch/gitlab.ini`
 
+Optional `protocol` parameter can be used to specify the protocol which is used to contact the gitlab host. If not set `https` is used.
+
 Format:
 
 ```ini
@@ -122,6 +124,7 @@ personal_token = <personal-token>
 
 [gitlab.local]
 personal_token = <personal-token>
+protocol = http
 ```
 
 Checkout [GitLab Help][personal-token-gitlab] on how to get the Personal Access Token. Make sure to enable `api` scope for the token.

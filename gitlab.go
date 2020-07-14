@@ -18,6 +18,7 @@ import (
 type GitlabCredentials struct {
 	Host          string
 	PersonalToken string
+	Protocol      string
 }
 
 func (creds GitlabCredentials) query(method, url string) (map[string]interface{}, error) {
@@ -34,7 +35,7 @@ func (creds GitlabCredentials) getIssue(repo string, todo Todo) (map[string]inte
 	json, err := creds.query(
 		"GET",
 		// FIXME(#156): possible GitLab API injection attack
-		"https://"+creds.Host+"/api/v4/projects/"+url.QueryEscape(repo)+"/issues/"+(*todo.ID)[1:]) // self-hosted
+		creds.Protocol+"://"+creds.Host+"/api/v4/projects/"+url.QueryEscape(repo)+"/issues/"+(*todo.ID)[1:]) // self-hosted
 
 	if err != nil {
 		return nil, err
@@ -50,7 +51,7 @@ func (creds GitlabCredentials) postIssue(repo string, todo Todo, body string) (T
 
 	json, err := creds.query(
 		"POST",
-		"https://"+creds.Host+"/api/v4/projects/"+url.QueryEscape(repo)+"/issues?"+params.Encode()) // self-hosted
+		creds.Protocol+"://"+creds.Host+"/api/v4/projects/"+url.QueryEscape(repo)+"/issues?"+params.Encode()) // self-hosted
 	if err != nil {
 		return todo, err
 	}
@@ -75,9 +76,14 @@ func GitlabCredentialsFromFile(filepath string) []GitlabCredentials {
 	}
 
 	for _, section := range cfg.Sections()[1:] {
+		proto := "https"
+		if section.HasKey("protocol") {
+			proto = section.Key("protocol").String()
+		}
 		credentials = append(credentials, GitlabCredentials{
 			Host:          section.Name(),
 			PersonalToken: section.Key("personal_token").String(),
+			Protocol:      proto,
 		})
 	}
 
@@ -93,11 +99,13 @@ func GitlabCredentialsFromToken(token string) (GitlabCredentials, error) {
 		return GitlabCredentials{
 			Host:          "gitlab.com",
 			PersonalToken: credentials[0],
+			Protocol:      "https",
 		}, nil
 	case 2:
 		return GitlabCredentials{
 			Host:          credentials[0],
 			PersonalToken: credentials[1],
+			Protocol:      "https",
 		}, nil
 	default:
 		return GitlabCredentials{},
